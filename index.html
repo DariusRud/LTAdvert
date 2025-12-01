@@ -69,10 +69,10 @@
                         lighting: 'Yra',
                         contractDate: '2025-08-15',
                         permitUntil: '2025-10-01',
-                        status: 'OK/Pr', 
                         client: 'Havas Media UAB', 
                         period: '2025-09-01 - 2025-09-28',
-                        active: true // For visualization
+                        activeProjectId: 'KS46-44-PRJ-001', // Links to active project
+                        activeProjectStage: 2
                     },
                     { 
                         id: 'VLED-2', 
@@ -82,10 +82,10 @@
                         lighting: 'Yra',
                         contractDate: '2024-01-01',
                         permitUntil: '2026-01-01',
-                        status: 'OK', 
                         client: 'UAB BCB Group', 
                         period: '2025-01-01 - 2025-12-31',
-                        active: true
+                        activeProjectId: null, 
+                        activeProjectStage: null
                     },
                     { 
                         id: 'PAS18-1', 
@@ -95,10 +95,10 @@
                         lighting: 'Nėra',
                         contractDate: '2023-05-20',
                         permitUntil: '2025-12-31',
-                        status: 'OK/Pr', 
                         client: 'Pakruojo vartotojų koop', 
                         period: '2025-01-01 - 2025-12-31',
-                        active: true
+                        activeProjectId: 'PAS18-1-PRJ-002',
+                        activeProjectStage: 3
                     },
                     { 
                         id: 'AST18-2 A', 
@@ -108,10 +108,10 @@
                         lighting: 'Nėra',
                         contractDate: '-',
                         permitUntil: '2025-09-01',
-                        status: 'OK', 
                         client: '-', 
                         period: '-',
-                        active: false
+                        activeProjectId: null,
+                        activeProjectStage: null
                     },
                 ],
 
@@ -280,6 +280,14 @@
                     this.selectedProject = JSON.parse(JSON.stringify(project)); 
                     this.projectActiveTab = 'main'; 
                 },
+                
+                // Helper to open project from occupancy table
+                openProjectById(projectId) {
+                    const project = this.projects.find(p => p.id === projectId);
+                    if (project) {
+                        this.openModal(project);
+                    }
+                },
 
                 closeModal() {
                     this.selectedProject = null;
@@ -309,6 +317,12 @@
                     }
 
                     this.newTaskInput = '';
+                },
+
+                // Simulated function to create a new project from occupancy
+                createProjectFromOccupancy(item) {
+                    alert(`Kuriamas naujas projektas objektui: ${item.id}`);
+                    // Logic to create a new project would go here
                 },
 
                 addComment() {
@@ -778,7 +792,7 @@
             </table>
         </div>
 
-        <!-- 6. OCCUPANCY (Užimtumas) - NEW -->
+        <!-- 6. OCCUPANCY (Užimtumas) - NEW & UPDATED -->
         <div x-show="activeTab === 'occupancy'" x-transition.opacity class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                <h3 class="font-bold text-slate-800">Užimtumas</h3>
@@ -792,9 +806,10 @@
                         <th class="px-6 py-4">Kodas</th>
                         <th class="px-6 py-4">Miestas / Adresas</th>
                         <th class="px-6 py-4">Sutartis / Leidimas</th>
-                        <th class="px-6 py-4">Info</th>
+                        <th class="px-6 py-4">Techninė info</th>
                         <th class="px-6 py-4">Klientas / Laikotarpis</th>
-                        <th class="px-6 py-4">Statusas</th>
+                        <th class="px-6 py-4">Projektas</th>
+                        <th class="px-6 py-4 text-right">Veiksmai</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -802,7 +817,6 @@
                         <tr class="hover:bg-slate-50">
                             <td class="px-6 py-4">
                                 <div class="font-mono font-bold text-slate-900" x-text="item.id"></div>
-                                <div class="text-xs text-slate-500 mt-1" x-text="item.type"></div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-slate-900 font-medium" x-text="item.city"></div>
@@ -815,11 +829,14 @@
                                 </div>
                             </td>
                              <td class="px-6 py-4">
-                                <div class="flex items-center gap-1.5">
-                                    <span class="text-[10px] uppercase font-bold text-slate-400">Šviesa:</span>
-                                    <span class="text-xs font-medium" 
-                                          :class="item.lighting === 'Yra' ? 'text-green-600' : 'text-slate-400'" 
-                                          x-text="item.lighting"></span>
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-xs text-slate-600" x-text="item.type"></span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-[10px] uppercase font-bold text-slate-400">Šviesa:</span>
+                                        <span class="text-xs font-medium" 
+                                              :class="item.lighting === 'Yra' ? 'text-green-600' : 'text-slate-400'" 
+                                              x-text="item.lighting"></span>
+                                    </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4">
@@ -830,9 +847,23 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="px-2 py-1 rounded text-xs font-medium border"
-                                    :class="item.active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
-                                    x-text="item.status"></span>
+                                <template x-if="item.activeProjectId">
+                                    <button @click="openProjectById(item.activeProjectId)" 
+                                            class="text-xs font-mono text-blue-600 bg-blue-50 border border-blue-100 px-2 py-1 rounded hover:bg-blue-100 transition-colors">
+                                        <span x-text="item.activeProjectId"></span>
+                                        <span class="ml-1 text-blue-400" x-text="'(Etapas: ' + item.activeProjectStage + ')'"></span>
+                                    </button>
+                                </template>
+                                <template x-if="!item.activeProjectId">
+                                    <span class="text-xs text-slate-400">-</span>
+                                </template>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <button @click="createProjectFromOccupancy(item)" 
+                                        class="flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm border border-green-100"
+                                        title="Kurti naują leidimo projektą">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                </button>
                             </td>
                         </tr>
                      </template>
