@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LT Advert - Leidimų Valdymas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+
+    <script>
+        function permitApp() {
+            return {
+                activeTab: 'tasks', 
+                activeSubTab: 'all', 
+                selectedProject: null,
+                projectActiveTab: 'main', 
+                chatInput: '',
+                newTaskInput: '',
+                
+                // Filters
+                taskFilterResponsible: 'all',
+                taskFilterStage: 'all',
+                taskGroupBy: 'none', 
+                searchQuery: '',
+                filterType: 'all', 
+                filterStage: 'all', 
+                
+                pipelineSteps: [
+                    { id: 1, label: 'Naujas' },
+                    { id: 2, label: 'Info. ruošimas' },
+                    { id: 3, label: 'Užsakymas' },
+                    { id: 4, label: 'Mokėjimas' },
+                    { id: 5, label: 'Gautas' },
+                    { id: 6, label: 'Užbaigta' }
+                ],
+                
+                // Mock Occupancy Data (Užimtumas)
+                occupancyData: [
+                    { id: 'KS46-44', city: 'Kaunas', address: 'Savanorių pr.', status: 'OK/Pr', client: 'Havas Media UAB', period: '2025-09-01 - 2025-09-28' },
+                    { id: 'VLED-2', city: 'Vilnius', address: 'Švitrigailos g. 33', status: 'OK', client: 'UAB BCB Group', period: '2025-01-01 - 2025-12-31' },
+                    { id: 'PAS18-1', city: 'Pakruojis', address: 'Statybininkų g. 4b', status: 'OK/Pr', client: 'Pakruojo vartotojų koop', period: '2025-01-01 - 2025-12-31' },
+                    { id: 'AST18-2 A', city: 'Alytus', address: 'Santaikos g. 33 A', status: 'OK', client: '-', period: '-' },
+                ],
+
+                projects: [
+                    { 
+                        id: 'KS46-44', 
+                        type: 'Trumpalaikis', 
+                        city: 'Kaunas', 
+                        address: 'Savanorių pr. (nuo senamiesčio)', 
+                        status: 'Ruošiama', 
+                        expiryDate: '2025-09-30', // Artėjantis terminas
+                        validFrom: '2025-09-01',
+                        owner: 'Kauno m. sav.', 
+                        ownerContact: 'Miesto tvarkymo sk.',
+                        price: '-', 
+                        paymentStatus: 'Unpaid', 
+                        paymentPeriod: '2025-09-01 - 2025-09-30',
+                        currentStage: 2,
+                        permitNumber: '-',
+                        dimensions: '6x3',
+                        structureType: 'Stendas',
+                        client: 'UAB LT ADVERT', 
+                        submissionDate: '2025-08-12', 
+                        responsible: 'Justas',
+                        municipality: 'Kauno miesto savivaldybė',
+                        contactPerson: 'Jonas Jonaitis (Architektūros sk.)',
+                        tasks: [
+                            { id: 't1', title: 'Užsakyti maketą', isCompleted: false, priority: 'High', deadline: 'Šiandien', assignedTo: 'Monika', stage: 'Info. ruošimas' },
+                            { id: 't2', title: 'Gauti patvirtinimą iš savivaldybės', isCompleted: false, priority: 'Medium', deadline: '2025-08-25', assignedTo: 'Justas', stage: 'Užsakymas' }
+                        ],
+                        history: [{ id: 'h1', date: '2025-08-13', user: 'Sistema', action: 'Sukurtas iš "Užimtumo"', type: 'system' }]
+                    },
+                    { 
+                        id: 'VLED-2', 
+                        type: 'Ilgalaikis', 
+                        city: 'Vilnius', 
+                        address: 'Švitrigailos g. 33', 
+                        status: 'Laukiama mokėjimo', 
+                        expiryDate: '2025-10-30', 
+                        validFrom: '2020-10-30',
+                        owner: 'UAB BCB Group', 
+                        ownerContact: 'Direktorius',
+                        price: '3266 €', 
+                        paymentStatus: 'Pending', 
+                        paymentPeriod: '2025-01-01 - 2025-12-31',
+                        currentStage: 4,
+                        permitNumber: 'A635-1496/23',
+                        dimensions: 'Ekrana',
+                        structureType: 'Ekranas',
+                        client: 'UAB BCB Group', 
+                        submissionDate: '2025-08-10', 
+                        responsible: 'Vilija',
+                        municipality: 'Vilniaus miesto savivaldybė',
+                        contactPerson: 'Ona Onaitė (Reklamos poskyris)',
+                        tasks: [
+                           { id: 't3', title: 'Išsiųsti sąskaitą apmokėjimui', isCompleted: false, priority: 'Medium', deadline: '2025-08-25', assignedTo: 'Vilija', stage: 'Mokėjimas' }
+                        ],
+                        history: []
+                    },
+                    {
+                        id: 'PAS18-1', 
+                        type: 'Ilgalaikis', 
+                        city: 'Pakruojis', 
+                        address: 'Statybininkų g. 4b',
+                        status: 'Paraiška pateikta', 
+                        expiryDate: '2025-12-31', 
+                        validFrom: '2021-01-01',
+                        owner: 'Pakruojo vartotojų koop', 
+                        ownerContact: 'Buhalterija',
+                        price: '98.00 €',
+                        paymentStatus: 'Paid', 
+                        paymentPeriod: '2025-01-01 - 2025-12-31',
+                        currentStage: 3,
+                        permitNumber: 'Leidimo Nr. RLR-5720',
+                        dimensions: '6x3',
+                        structureType: 'Siena',
+                        client: 'Pakruojo vartotojų koop', 
+                        submissionDate: '2025-08-13', 
+                        responsible: 'Justas',
+                        municipality: 'Pakruojo rajono savivaldybė',
+                        contactPerson: 'Petras Petraitis',
+                        tasks: [
+                             { id: 't4', title: 'Patikrinti leidimą Pakruojyje', isCompleted: true, priority: 'Low', deadline: '2025-08-30', assignedTo: 'Justas', stage: 'Gautas' }
+                        ], 
+                        history: []
+                    }
+                ],
+                
+                get totalTasks() {
+                    return this.projects.flatMap(p => p.tasks).filter(t => !t.isCompleted).length;
+                },
+
+                getTabTitle() {
+                    if (this.activeTab === 'tasks') return 'Užduotys / Darbastalis';
+                    if (this.activeTab === 'pipeline') {
+                        if (this.activeSubTab === 'new') return 'Nauji Leidimai';
+                        if (this.activeSubTab === 'fees') return 'Rinkliavos';
+                        return 'Leidimų Išėmimas';
+                    }
+                    if (this.activeTab === 'registry') return 'Visi Leidimai';
+                    if (this.activeTab === 'occupancy') return 'Užimtumas';
+                    return '';
+                },
+                
+                // Helper to check expiry urgency
+                getExpiryStatus(dateString) {
+                    if (!dateString) return 'unknown';
+                    const today = new Date();
+                    const expiry = new Date(dateString);
+                    const diffTime = Math.abs(expiry - today);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    
+                    if (expiry < today) return 'expired';
+                    if (diffDays <= 30) return 'critical'; // < 1 month
+                    if (diffDays <= 60) return 'warning'; // < 2 months
+                    return 'ok';
+                },
+
+                getAllTasks() {
+                    let tasks = this.projects.flatMap(p => p.tasks.map(t => ({
+                        ...t, 
+                        projectId: p.id, 
+                        projectCity: p.city,
+                        projectAddress: p.address
+                    })));
+
+                    if (this.taskFilterResponsible !== 'all') {
+                        tasks = tasks.filter(t => t.assignedTo === this.taskFilterResponsible);
+                    }
+                    if (this.taskFilterStage !== 'all') {
+                        tasks = tasks.filter(t => t.stage === this.taskFilterStage);
+                    }
+
+                    return tasks;
+                },
+
+                getGroupedTasks() {
+                    const tasks = this.getAllTasks();
+                    if (this.taskGroupBy === 'none') return { 'Visos užduotys': tasks };
+                    
+                    const groups = {};
+                    tasks.forEach(task => {
+                        const key = this.taskGroupBy === 'project' ? task.projectId : task.stage;
+                        if (!groups[key]) groups[key] = [];
+                        groups[key].push(task);
+                    });
+                    return groups;
+                },
+                
+                getFilteredNewProjects() {
+                    return this.projects.filter(p => {
+                        const isNewStage = p.currentStage <= 3; 
+                        
+                        const matchesSearch = p.id.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+                                              p.city.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                              p.address.toLowerCase().includes(this.searchQuery.toLowerCase());
+                                              
+                        const matchesType = this.filterType === 'all' || p.type === this.filterType;
+                        const matchesStage = this.filterStage === 'all' || p.currentStage === parseInt(this.filterStage);
+
+                        return isNewStage && matchesSearch && matchesType && matchesStage;
+                    });
+                },
+
+                openModal(project) {
+                    this.selectedProject = JSON.parse(JSON.stringify(project)); 
+                    this.projectActiveTab = 'main'; 
+                },
+
+                closeModal() {
+                    this.selectedProject = null;
+                },
+
+                addTask() {
+                    if (!this.newTaskInput.trim() || !this.selectedProject) return;
+
+                    const currentStageLabel = this.pipelineSteps.find(s => s.id === this.selectedProject.currentStage)?.label || 'Bendra';
+
+                    const newTask = {
+                        id: Date.now(),
+                        title: this.newTaskInput,
+                        isCompleted: false,
+                        priority: 'Medium',
+                        deadline: new Date().toISOString().split('T')[0],
+                        assignedTo: 'Aš', 
+                        stage: currentStageLabel
+                    };
+
+                    if (!this.selectedProject.tasks) this.selectedProject.tasks = [];
+                    this.selectedProject.tasks.push(newTask);
+                    
+                    const index = this.projects.findIndex(p => p.id === this.selectedProject.id);
+                    if (index !== -1) {
+                        this.projects[index].tasks.push(newTask);
+                    }
+
+                    this.newTaskInput = '';
+                },
+
+                addComment() {
+                    if (!this.chatInput.trim()) return;
+                    
+                    const newLog = {
+                        id: Date.now().toString(),
+                        date: new Date().toISOString().split('T')[0],
+                        user: 'Aš',
+                        action: this.chatInput,
+                        type: 'comment'
+                    };
+                    
+                    if (this.selectedProject) {
+                        if (!this.selectedProject.history) this.selectedProject.history = [];
+                        this.selectedProject.history.unshift(newLog);
+                        
+                        const index = this.projects.findIndex(p => p.id === this.selectedProject.id);
+                        if (index !== -1) {
+                            this.projects[index] = this.selectedProject;
+                        }
+                        
+                        this.chatInput = '';
+                    }
+                },
+                
+                init() {
+                    this.$nextTick(() => {
+                        lucide.createIcons();
+                    });
+                    
+                    this.$watch('activeTab', () => this.$nextTick(() => lucide.createIcons()));
+                    this.$watch('activeSubTab', () => this.$nextTick(() => lucide.createIcons()));
+                    this.$watch('selectedProject', () => this.$nextTick(() => lucide.createIcons()));
+                    this.$watch('projectActiveTab', () => this.$nextTick(() => lucide.createIcons()));
+                    this.$watch('taskGroupBy', () => this.$nextTick(() => lucide.createIcons()));
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 h-screen flex overflow-hidden" x-data="permitApp()">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col p-4 shrink-0">
+        <div class="px-4 py-6 mb-2">
+            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest">LT ADVERT</h2>
+        </div>
+        
+        <nav class="space-y-6 flex-1">
+            
+            <!-- DASHBOARD -->
+            <div>
+                <button @click="activeTab = 'tasks'; activeSubTab = 'all'" 
+                    :class="activeTab === 'tasks' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'"
+                    class="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                        <span class="font-medium text-sm">Užduotys / Darbastalis</span>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white" x-show="totalTasks > 0" x-text="totalTasks"></span>
+                </button>
+            </div>
+
+            <!-- LEIDIMŲ IŠĖMIMAS -->
+            <div>
+                <div class="px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">LEIDIMŲ IŠĖMIMAS</div>
+                <div class="space-y-1">
+                    <button @click="activeTab = 'pipeline'; activeSubTab = 'new'" 
+                        :class="(activeTab === 'pipeline' && activeSubTab === 'new') ? 'bg-green-600 text-white shadow-lg shadow-green-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'"
+                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200 pl-8">
+                        <span class="font-medium text-sm">Nauji leidimai</span>
+                         <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">2</span>
+                    </button>
+                    
+                    <button @click="activeTab = 'pipeline'; activeSubTab = 'fees'" 
+                        :class="(activeTab === 'pipeline' && activeSubTab === 'fees') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'"
+                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200 pl-8">
+                        <span class="font-medium text-sm">Rinkliavos</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- REGISTRAI -->
+            <div>
+                <div class="px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">REGISTRAI</div>
+                <div class="space-y-1">
+                    <button @click="activeTab = 'registry'; activeSubTab = 'all'" 
+                        :class="activeTab === 'registry' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'"
+                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200 pl-8">
+                        <span class="font-medium text-sm">Visi leidimai</span>
+                    </button>
+                    <!-- NAUJAS PUNKTAS: UŽIMTUMAS -->
+                    <button @click="activeTab = 'occupancy'; activeSubTab = 'all'" 
+                        :class="activeTab === 'occupancy' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'"
+                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200 pl-8">
+                        <span class="font-medium text-sm">Užimtumas</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+         <!-- User Profile -->
+        <div class="mt-auto pt-6 border-t border-slate-800">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-xs font-bold">D</div>
+                <div>
+                    <p class="text-sm font-medium text-white">Darius Rud.</p>
+                    <p class="text-xs text-slate-500">Super Admin</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 p-8 overflow-y-auto bg-slate-50">
+        
+        <!-- TITLE -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-slate-900" x-text="getTabTitle()"></h1>
+        </div>
+
+        <!-- 1. TASKS VIEW (Darbastalis) -->
+        <div x-show="activeTab === 'tasks'" x-transition.opacity class="space-y-6">
+            
+            <!-- Filters Toolbar -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-500 uppercase">Filtruoti:</span>
+                    <select x-model="taskFilterResponsible" class="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                        <option value="all">Visi darbuotojai</option>
+                        <option value="Justas">Justas</option>
+                        <option value="Vilija">Vilija</option>
+                        <option value="Monika">Monika</option>
+                        <option value="Aš">Mano užduotys</option>
+                    </select>
+                    <select x-model="taskFilterStage" class="h-9 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                        <option value="all">Visi etapai</option>
+                        <option value="Info. ruošimas">Info. ruošimas</option>
+                        <option value="Užsakymas">Užsakymas</option>
+                        <option value="Mokėjimas">Mokėjimas</option>
+                    </select>
+                </div>
+                <div class="w-px h-6 bg-slate-200 mx-2"></div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-500 uppercase">Grupuoti:</span>
+                    <div class="flex bg-slate-100 rounded-lg p-1">
+                        <button @click="taskGroupBy = 'none'" :class="taskGroupBy === 'none' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'" class="px-3 py-1 text-xs font-medium rounded-md transition-all">Sąrašas</button>
+                        <button @click="taskGroupBy = 'project'" :class="taskGroupBy === 'project' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'" class="px-3 py-1 text-xs font-medium rounded-md transition-all">Pagal Projektą</button>
+                        <button @click="taskGroupBy = 'stage'" :class="taskGroupBy === 'stage' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'" class="px-3 py-1 text-xs font-medium rounded-md transition-all">Pagal Etapą</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task List (Grouped or Flat) -->
+            <div class="space-y-6">
+                <template x-for="(groupTasks, groupName) in getGroupedTasks()" :key="groupName">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center" x-show="taskGroupBy !== 'none'">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <i x-show="taskGroupBy === 'project'" data-lucide="folder" class="w-4 h-4 text-slate-400"></i>
+                                <i x-show="taskGroupBy === 'stage'" data-lucide="layers" class="w-4 h-4 text-slate-400"></i>
+                                <span x-text="groupName"></span>
+                            </h3>
+                            <span class="text-xs font-medium bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full" x-text="groupTasks.length"></span>
+                        </div>
+                        
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="w-10 px-4 py-3 text-center">#</th>
+                                    <th class="px-4 py-3">Užduotis</th>
+                                    <th class="px-4 py-3" x-show="taskGroupBy !== 'project'">Projektas</th>
+                                    <th class="px-4 py-3" x-show="taskGroupBy !== 'stage'">Etapas</th>
+                                    <th class="px-4 py-3">Atsakingas</th>
+                                    <th class="px-4 py-3">Terminas</th>
+                                    <th class="px-4 py-3 text-right">Veiksmai</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="task in groupTasks" :key="task.id">
+                                    <tr class="hover:bg-slate-50 group transition-colors">
+                                        <td class="px-4 py-3 text-center">
+                                            <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer" :checked="task.isCompleted">
+                                        </td>
+                                        <td class="px-4 py-3 font-medium text-slate-900" x-text="task.title"></td>
+                                        <td class="px-4 py-3" x-show="taskGroupBy !== 'project'">
+                                            <div class="text-xs font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit" x-text="task.projectId"></div>
+                                        </td>
+                                        <td class="px-4 py-3" x-show="taskGroupBy !== 'stage'">
+                                            <span class="text-xs text-slate-600" x-text="task.stage"></span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center gap-1.5">
+                                                <div class="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold" x-text="task.assignedTo?.charAt(0)"></div>
+                                                <span class="text-xs text-slate-700" x-text="task.assignedTo"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center gap-1.5 text-xs" :class="task.priority === 'High' ? 'text-red-600 font-medium' : 'text-slate-500'">
+                                                <i data-lucide="calendar" class="w-3 h-3"></i>
+                                                <span x-text="task.deadline"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 text-right">
+                                            <button @click="openModal(projects.find(p => p.id === task.projectId))" class="text-slate-400 hover:text-green-600 p-1 rounded-md hover:bg-green-50 transition-colors">
+                                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- 2. NEW PERMITS (Nauji leidimai) -->
+        <div x-show="activeTab === 'pipeline' && activeSubTab === 'new'" x-transition.opacity class="space-y-6">
+            
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs font-bold text-slate-500 uppercase mb-1">Visi Aktyvūs</div>
+                    <div class="text-2xl font-bold text-slate-900" x-text="getFilteredNewProjects().length"></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs font-bold text-slate-500 uppercase mb-1">Inicijavimo etape</div>
+                    <div class="text-2xl font-bold text-blue-600" x-text="projects.filter(p => p.currentStage === 1).length"></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs font-bold text-slate-500 uppercase mb-1">Ruošiama (Maketai/Info)</div>
+                    <div class="text-2xl font-bold text-orange-500" x-text="projects.filter(p => p.currentStage === 2).length"></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs font-bold text-slate-500 uppercase mb-1">Užsakyta (Derinama)</div>
+                    <div class="text-2xl font-bold text-green-600" x-text="projects.filter(p => p.currentStage === 3).length"></div>
+                </div>
+            </div>
+
+            <!-- Filters & Actions -->
+            <div class="flex justify-between items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-4 flex-1">
+                    <div class="relative flex-1 max-w-md">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                        <input type="text" x-model="searchQuery" placeholder="Ieškoti pagal kodą, miestą..." class="w-full h-10 pl-10 pr-4 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <select x-model="filterType" class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="all">Visi Tipai</option>
+                        <option value="Ilgalaikis">Ilgalaikiai</option>
+                        <option value="Trumpalaikis">Trumpalaikiai</option>
+                    </select>
+                    <select x-model="filterStage" class="h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="all">Visi Etapai</option>
+                        <option value="1">Naujas</option>
+                        <option value="2">Info. ruošimas</option>
+                        <option value="3">Užsakymas</option>
+                    </select>
+                </div>
+                <button class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Naujas Projektas
+                </button>
+            </div>
+
+            <!-- Enhanced Table View -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-4">Kodas / Tipas</th>
+                            <th class="px-6 py-4">Vieta</th>
+                            <th class="px-6 py-4">Etapas</th>
+                            <th class="px-6 py-4">Užduotys</th>
+                            <th class="px-6 py-4">Terminas</th>
+                            <th class="px-6 py-4 text-right">Veiksmai</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="project in getFilteredNewProjects()" :key="project.id">
+                            <tr class="hover:bg-slate-50 cursor-pointer" @click="openModal(project)">
+                                <td class="px-6 py-4">
+                                    <div class="font-mono font-bold text-slate-900" x-text="project.id"></div>
+                                    <span class="inline-flex mt-1 px-2 py-0.5 rounded text-[10px] font-medium" 
+                                          :class="project.type === 'Ilgalaikis' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'"
+                                          x-text="project.type"></span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-slate-900" x-text="project.city"></div>
+                                    <div class="text-xs text-slate-500 truncate max-w-[200px]" x-text="project.address"></div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                            <div class="h-full bg-green-500 rounded-full" :style="`width: ${(project.currentStage / 6) * 100}%`"></div>
+                                        </div>
+                                        <span class="text-xs font-medium text-slate-700" 
+                                              x-text="pipelineSteps.find(s => s.id === project.currentStage)?.label"></span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-1 text-xs text-slate-500">
+                                        <i data-lucide="check-square" class="w-3 h-3"></i>
+                                        <span x-text="project.tasks.filter(t => t.isCompleted).length"></span> / 
+                                        <span x-text="project.tasks.length"></span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded w-fit">
+                                        <i data-lucide="clock" class="w-3 h-3"></i>
+                                        <span x-text="project.deadline || 'Nenurodyta'"></span> <!-- Added deadline placeholder in data if missing -->
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-slate-400 hover:text-green-600 transition-colors" @click.stop="openModal(project)">
+                                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="getFilteredNewProjects().length === 0">
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <i data-lucide="search-x" class="w-8 h-8 opacity-50"></i>
+                                        <span>Nerasta jokių projektų pagal nurodytus kriterijus.</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. FEES (Rinkliavos) -->
+        <div x-show="activeTab === 'pipeline' && activeSubTab === 'fees'" x-transition.opacity class="space-y-6">
+            
+            <!-- Finance KPI -->
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold text-slate-500 uppercase">Mokėtina (Šį mėn.)</div>
+                        <div class="text-2xl font-bold text-red-600">3,364 €</div>
+                    </div>
+                    <div class="p-2 bg-red-50 rounded-full text-red-600"><i data-lucide="alert-circle"></i></div>
+                </div>
+                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold text-slate-500 uppercase">Laukiama sąskaitų</div>
+                        <div class="text-2xl font-bold text-yellow-600">2</div>
+                    </div>
+                    <div class="p-2 bg-yellow-50 rounded-full text-yellow-600"><i data-lucide="file-clock"></i></div>
+                </div>
+                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-bold text-slate-500 uppercase">Apmokėta (YTD)</div>
+                        <div class="text-2xl font-bold text-green-600">12,450 €</div>
+                    </div>
+                    <div class="p-2 bg-slate-100 rounded-full text-slate-600"><i data-lucide="check-circle"></i></div>
+                </div>
+            </div>
+
+            <!-- Finance Table -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                   <h3 class="font-bold text-slate-800">Mokėjimų sąrašas</h3>
+                   <div class="flex gap-2">
+                     <button class="px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded hover:bg-slate-50">Eksportuoti (Excel)</button>
+                   </div>
+                </div>
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-4">Kodas</th>
+                            <th class="px-6 py-4">Miestas</th>
+                            <th class="px-6 py-4">Laikotarpis</th>
+                            <th class="px-6 py-4">Gavėjas</th>
+                            <th class="px-6 py-4">Suma</th>
+                            <th class="px-6 py-4">Statusas</th>
+                            <th class="px-6 py-4">Veiksmai</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                         <template x-for="project in projects.filter(p => p.price !== '-')" :key="project.id">
+                            <tr class="hover:bg-slate-50" @click="openModal(project)">
+                                <td class="px-6 py-4 font-mono font-bold text-slate-900" x-text="project.id"></td>
+                                <td class="px-6 py-4 text-slate-600" x-text="project.city"></td>
+                                <td class="px-6 py-4 text-xs text-slate-500" x-text="project.paymentPeriod || '-'"></td>
+                                <td class="px-6 py-4 text-slate-600" x-text="project.municipality"></td>
+                                <td class="px-6 py-4 font-bold text-slate-900" x-text="project.price"></td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded text-xs font-medium border"
+                                        :class="{
+                                            'bg-green-100 text-green-800 border-green-200': project.paymentStatus === 'Paid',
+                                            'bg-yellow-100 text-yellow-800 border-yellow-200': project.paymentStatus === 'Pending',
+                                            'bg-red-100 text-red-800 border-red-200': project.paymentStatus === 'Unpaid'
+                                        }"
+                                        x-text="project.paymentStatus === 'Paid' ? 'Apmokėta' : (project.paymentStatus === 'Pending' ? 'Laukiama' : 'Neapmokėta')">
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <template x-if="project.paymentStatus === 'Unpaid'">
+                                        <button class="text-blue-600 hover:underline text-xs" @click.stop>Formuoti</button>
+                                    </template>
+                                    <template x-if="project.paymentStatus === 'Pending'">
+                                        <button class="text-slate-500 hover:text-slate-700 text-xs flex items-center gap-1" @click.stop><i data-lucide="upload" class="w-3 h-3"></i> Įkelti</button>
+                                    </template>
+                                </td>
+                            </tr>
+                         </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 5. ALL PERMITS (Visi leidimai) -->
+        <div x-show="activeTab === 'registry' && activeSubTab === 'all'" x-transition.opacity class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+               <h3 class="font-bold text-slate-800">Leidimų Registras</h3>
+               <div class="flex gap-2">
+                 <input type="text" placeholder="Ieškoti..." class="h-9 w-64 bg-white border border-slate-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                 <button class="h-9 w-9 flex items-center justify-center bg-white border border-slate-300 rounded-lg hover:bg-slate-50"><i data-lucide="filter" class="w-4 h-4 text-slate-500"></i></button>
+               </div>
+            </div>
+            <table class="w-full text-sm text-left">
+                <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4">Kodas</th>
+                        <th class="px-6 py-4">Tipas</th>
+                        <th class="px-6 py-4">Vieta</th>
+                        <th class="px-6 py-4">Galiojimas</th>
+                        <th class="px-6 py-4">Savininkas</th>
+                        <th class="px-6 py-4">Statusas</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                     <template x-for="project in projects" :key="project.id">
+                        <tr class="hover:bg-slate-50 cursor-pointer" @click="openModal(project)">
+                            <td class="px-6 py-4">
+                                <div class="font-mono font-bold text-slate-900" x-text="project.id"></div>
+                                <div class="text-xs text-slate-400 mt-1" x-text="project.permitNumber"></div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-0.5 rounded text-xs font-medium" 
+                                      :class="project.type === 'Ilgalaikis' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'"
+                                      x-text="project.type"></span>
+                                <div class="text-xs text-slate-500 mt-1" x-text="project.structureType"></div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-slate-900" x-text="project.city"></div>
+                                <div class="text-xs text-slate-500" x-text="project.address"></div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-slate-900" x-text="project.expiryDate"></div>
+                                <div class="text-xs text-slate-400">Nuo: <span x-text="project.validFrom"></span></div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-slate-900" x-text="project.owner"></div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200" x-text="project.status"></span>
+                            </td>
+                        </tr>
+                     </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 6. OCCUPANCY (Užimtumas) - NEW -->
+        <div x-show="activeTab === 'occupancy'" x-transition.opacity class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+               <h3 class="font-bold text-slate-800">Užimtumas</h3>
+               <div class="flex gap-2">
+                 <input type="text" placeholder="Ieškoti..." class="h-9 w-64 bg-white border border-slate-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+               </div>
+            </div>
+            <table class="w-full text-sm text-left">
+                <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4">Kodas</th>
+                        <th class="px-6 py-4">Miestas</th>
+                        <th class="px-6 py-4">Adresas</th>
+                        <th class="px-6 py-4">Statusas</th>
+                        <th class="px-6 py-4">Klientas</th>
+                        <th class="px-6 py-4">Laikotarpis</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                     <template x-for="item in occupancyData" :key="item.id">
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 font-mono font-bold text-slate-900" x-text="item.id"></td>
+                            <td class="px-6 py-4 text-slate-600" x-text="item.city"></td>
+                            <td class="px-6 py-4 text-slate-600" x-text="item.address"></td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 rounded text-xs font-medium border"
+                                    :class="item.status === 'OK' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
+                                    x-text="item.status"></span>
+                            </td>
+                            <td class="px-6 py-4 text-slate-600" x-text="item.client"></td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2 text-xs bg-slate-100 px-2 py-1 rounded w-fit">
+                                    <i data-lucide="calendar" class="w-3 h-3 text-slate-400"></i>
+                                    <span x-text="item.period"></span>
+                                </div>
+                            </td>
+                        </tr>
+                     </template>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <!-- MODAL (PROJECT CARD) -->
+    <div x-show="selectedProject" x-cloak 
+         class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+         x-transition.opacity>
+        
+        <template x-if="selectedProject">
+            <div class="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" @click.outside="closeModal">
+                
+                <!-- Modal Header -->
+                <div class="bg-gradient-to-r from-green-600 to-emerald-700 text-white p-6 flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <h2 class="text-3xl font-bold tracking-tight" x-text="selectedProject.id"></h2>
+                            <span class="px-2 py-0.5 rounded text-xs font-medium bg-white/20 text-white" x-text="selectedProject.type"></span>
+                        </div>
+                        <div class="flex items-center gap-4 text-green-50 text-sm">
+                            <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> <span x-text="selectedProject.city"></span></span>
+                            <span class="flex items-center gap-1">•</span>
+                            <span x-text="selectedProject.address"></span>
+                            <span class="flex items-center gap-1 ml-4 border-l border-white/20 pl-4">
+                                <i data-lucide="clock" class="w-3 h-3"></i>
+                                <span>Galioja iki: </span>
+                                <span class="font-bold" x-text="selectedProject.expiryDate"
+                                      :class="{
+                                        'text-red-200': getExpiryStatus(selectedProject.expiryDate) === 'critical',
+                                        'text-yellow-200': getExpiryStatus(selectedProject.expiryDate) === 'warning',
+                                        'text-white': getExpiryStatus(selectedProject.expiryDate) === 'ok'
+                                      }">
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                    <button @click="closeModal" class="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <!-- Pipeline Steps -->
+                <div class="bg-white border-b border-slate-100 px-8 py-6">
+                    <div class="relative flex justify-between items-center">
+                        <div class="absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 -z-10"></div>
+                        <div class="absolute top-1/2 left-0 h-0.5 bg-green-500 -z-10 transition-all duration-500" :style="`width: ${((selectedProject.currentStage - 1) / 5) * 100}%`"></div>
+
+                        <template x-for="step in pipelineSteps" :key="step.id">
+                            <div class="flex flex-col items-center gap-2 bg-white px-2 z-10">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2"
+                                    :class="selectedProject.currentStage > step.id ? 'bg-green-500 border-green-500 text-white' : 
+                                           (selectedProject.currentStage === step.id ? 'bg-white border-green-500 text-green-600 shadow-lg scale-110' : 'bg-white border-slate-200 text-slate-400')">
+                                    <template x-if="selectedProject.currentStage > step.id">
+                                        <i data-lucide="check" class="w-5 h-5"></i>
+                                    </template>
+                                    <template x-if="selectedProject.currentStage <= step.id">
+                                        <span x-text="step.id"></span>
+                                    </template>
+                                </div>
+                                <span class="text-xs font-medium" :class="selectedProject.currentStage === step.id ? 'text-green-700' : 'text-slate-400'" x-text="step.label"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Modal Content with TABS -->
+                <div class="flex-1 overflow-hidden flex flex-col bg-slate-50">
+                    
+                    <!-- Tabs Header -->
+                    <div class="bg-white border-b border-slate-200 px-6 flex space-x-6">
+                        <button @click="projectActiveTab = 'main'" class="py-3 border-b-2 font-medium text-sm transition-colors" :class="projectActiveTab === 'main' ? 'border-green-600 text-green-700' : 'border-transparent text-slate-500 hover:text-slate-700'">Pagrindinė info</button>
+                        <button @click="projectActiveTab = 'fees'" class="py-3 border-b-2 font-medium text-sm transition-colors" :class="projectActiveTab === 'fees' ? 'border-green-600 text-green-700' : 'border-transparent text-slate-500 hover:text-slate-700'">Rinkliavos</button>
+                        <button @click="projectActiveTab = 'applications'" class="py-3 border-b-2 font-medium text-sm transition-colors" :class="projectActiveTab === 'applications' ? 'border-green-600 text-green-700' : 'border-transparent text-slate-500 hover:text-slate-700'">Paraiškos</button>
+                        <button @click="projectActiveTab = 'designs'" class="py-3 border-b-2 font-medium text-sm transition-colors" :class="projectActiveTab === 'designs' ? 'border-green-600 text-green-700' : 'border-transparent text-slate-500 hover:text-slate-700'">Maketai</button>
+                        <button @click="projectActiveTab = 'permits'" class="py-3 border-b-2 font-medium text-sm transition-colors" :class="projectActiveTab === 'permits' ? 'border-green-600 text-green-700' : 'border-transparent text-slate-500 hover:text-slate-700'">Leidimai</button>
+                    </div>
+
+                    <div class="flex-1 overflow-hidden flex">
+                        
+                        <!-- TAB CONTENT AREA -->
+                        <div class="flex-1 overflow-y-auto p-6">
+                            
+                            <!-- 1. PAGRINDINĖ INFO -->
+                            <div x-show="projectActiveTab === 'main'" class="space-y-6">
+                                
+                                <!-- GALIOJIMO ALERT (NEW) -->
+                                <div class="p-4 rounded-lg border flex items-start gap-3"
+                                     :class="{
+                                        'bg-red-50 border-red-100': getExpiryStatus(selectedProject.expiryDate) === 'critical',
+                                        'bg-yellow-50 border-yellow-100': getExpiryStatus(selectedProject.expiryDate) === 'warning',
+                                        'bg-green-50 border-green-100': getExpiryStatus(selectedProject.expiryDate) === 'ok'
+                                     }">
+                                    <i data-lucide="alert-triangle" class="w-5 h-5 mt-0.5" 
+                                       :class="{
+                                          'text-red-600': getExpiryStatus(selectedProject.expiryDate) === 'critical',
+                                          'text-yellow-600': getExpiryStatus(selectedProject.expiryDate) === 'warning',
+                                          'text-green-600': getExpiryStatus(selectedProject.expiryDate) === 'ok'
+                                       }"></i>
+                                    <div>
+                                        <h4 class="font-bold text-sm mb-1"
+                                            :class="{
+                                                'text-red-900': getExpiryStatus(selectedProject.expiryDate) === 'critical',
+                                                'text-yellow-900': getExpiryStatus(selectedProject.expiryDate) === 'warning',
+                                                'text-green-900': getExpiryStatus(selectedProject.expiryDate) === 'ok'
+                                            }">
+                                            Leidimo galiojimo statusas
+                                        </h4>
+                                        <p class="text-xs text-slate-700">
+                                            Leidimas galioja iki <span class="font-bold" x-text="selectedProject.expiryDate"></span>.
+                                            <span x-show="getExpiryStatus(selectedProject.expiryDate) === 'critical'">Dėmesio! Liko mažiau nei mėnuo. Būtina pratęsti.</span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <i data-lucide="map-pin" class="w-4 h-4 text-green-600"></i> Informacija apie vietą
+                                    </h3>
+                                    <div class="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Adresas</label>
+                                            <div class="font-medium text-slate-900 mt-1" x-text="selectedProject.address"></div>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Miestas</label>
+                                            <div class="font-medium text-slate-900 mt-1" x-text="selectedProject.city"></div>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Kodas</label>
+                                            <div class="font-medium text-slate-900 mt-1" x-text="selectedProject.id"></div>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Savivaldybė</label>
+                                            <div class="font-medium text-slate-900 mt-1" x-text="selectedProject.municipality"></div>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Išmatavimai</label>
+                                            <div class="font-medium text-slate-900 mt-1" x-text="selectedProject.dimensions"></div>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Tipas</label>
+                                            <div class="font-medium text-slate-900 mt-1" x-text="selectedProject.structureType"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <i data-lucide="user" class="w-4 h-4 text-green-600"></i> Savininkas
+                                    </h3>
+                                    <div class="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Pavadinimas</label>
+                                            <div class="font-medium text-slate-900 mt-1" x-text="selectedProject.owner"></div>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Kontaktas</label>
+                                            <div class="font-medium text-slate-900 mt-1" x-text="selectedProject.ownerContact"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. RINKLIAVOS -->
+                            <div x-show="projectActiveTab === 'fees'" class="space-y-6">
+                                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Rinkliavos Apskaičiavimas</h3>
+                                    <div class="grid grid-cols-3 gap-6 mb-4">
+                                        <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Suma</label>
+                                            <div class="font-medium text-slate-900 mt-1 text-xl" x-text="selectedProject.price"></div>
+                                        </div>
+                                         <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Statusas</label>
+                                            <div class="mt-1">
+                                                 <span class="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200" x-text="selectedProject.paymentStatus"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-4 bg-slate-50 rounded border border-slate-200">
+                                        <label class="text-xs font-medium text-slate-500 uppercase mb-2 block">Mokėjimo Rekvizitai</label>
+                                        <p class="text-sm text-slate-700">Gavėjas: <span x-text="selectedProject.municipality"></span> Administracija</p>
+                                        <p class="text-sm text-slate-700">Sąskaita: LT00 0000 0000 0000 0000</p>
+                                        <p class="text-sm text-slate-700">Paskirtis: Rinkliava už leidimą (Kodas: <span x-text="selectedProject.id"></span>)</p>
+                                    </div>
+                                    <div class="mt-4 flex gap-3">
+                                        <button class="px-4 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700">Formuoti mokėjimą</button>
+                                        <button class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded text-sm font-medium hover:bg-slate-50">Įkelti mokėjimo kopiją</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. PARAIŠKOS -->
+                            <div x-show="projectActiveTab === 'applications'" class="space-y-6">
+                                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Paraiškos Pildymas</h3>
+                                        <button class="text-green-600 text-sm font-medium hover:underline">Generuoti paraišką</button>
+                                    </div>
+                                    
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="text-xs font-medium text-slate-500 uppercase">Kontaktinis asmuo (Savivaldybė)</label>
+                                            <div class="font-medium text-slate-900 mt-1 flex items-center gap-2">
+                                                <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                                                <span x-text="selectedProject.contactPerson"></span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="border-t border-slate-100 pt-4 mt-4">
+                                            <label class="text-xs font-medium text-slate-500 uppercase mb-2 block">Įkelti dokumentai</label>
+                                            <div class="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center hover:bg-slate-50 cursor-pointer transition-colors">
+                                                <i data-lucide="upload-cloud" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i>
+                                                <p class="text-sm text-slate-500">Tempkite failus čia arba paspauskite</p>
+                                                <p class="text-xs text-slate-400 mt-1">(Pasirašyta paraiška, Įgaliojimas)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                             <!-- 4. MAKETAI -->
+                            <div x-show="projectActiveTab === 'designs'" class="space-y-6">
+                                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                     <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Vizualizacijos ir Projektai</h3>
+                                     <div class="grid grid-cols-3 gap-4">
+                                         <div class="aspect-video bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 relative group">
+                                             <i data-lucide="image" class="w-8 h-8 text-slate-300"></i>
+                                             <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                                                 <button class="text-white text-xs font-medium">Peržiūrėti</button>
+                                             </div>
+                                         </div>
+                                          <div class="aspect-video bg-slate-50 rounded-lg flex items-center justify-center border-2 border-dashed border-slate-200 cursor-pointer hover:bg-slate-100">
+                                             <div class="text-center">
+                                                 <i data-lucide="plus" class="w-6 h-6 text-slate-400 mx-auto"></i>
+                                                 <span class="text-xs text-slate-500 mt-1 block">Įkelti naują</span>
+                                             </div>
+                                         </div>
+                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- 5. LEIDIMAI -->
+                            <div x-show="projectActiveTab === 'permits'" class="space-y-6">
+                                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Gauti Leidimai</h3>
+                                    
+                                    <div class="bg-green-50 border border-green-100 rounded-lg p-4 mb-4 flex items-start gap-3">
+                                        <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mt-0.5"></i>
+                                        <div>
+                                            <h4 class="font-medium text-green-900 text-sm">Leidimas galioja</h4>
+                                            <p class="text-xs text-green-700 mt-1">Iki: <span x-text="selectedProject.expiryDate" class="font-bold"></span></p>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <div class="flex items-center justify-between p-3 border border-slate-200 rounded bg-white hover:bg-slate-50">
+                                            <div class="flex items-center gap-3">
+                                                <i data-lucide="file-check" class="w-5 h-5 text-green-600"></i>
+                                                <div>
+                                                    <p class="text-sm font-medium text-slate-900" x-text="selectedProject.permitNumber || 'Leidimas_2025.pdf'"></p>
+                                                    <p class="text-xs text-slate-500">Įkelta 2025-08-01</p>
+                                                </div>
+                                            </div>
+                                            <button class="text-slate-400 hover:text-slate-600"><i data-lucide="download" class="w-4 h-4"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Sidebar: Chat & Tasks (Always Visible) -->
+                        <div class="w-80 border-l border-slate-200 bg-slate-50 flex flex-col">
+                            <div class="p-4 flex-1 overflow-y-auto">
+                                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">UŽDUOTYS</h3>
+                                
+                                <!-- Add Task Input -->
+                                <div class="mb-4 flex gap-2">
+                                    <input type="text" x-model="newTaskInput" @keydown.enter="addTask()" placeholder="Nauja užduotis..." class="flex-1 text-xs border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-500">
+                                    <button @click="addTask()" class="bg-slate-100 hover:bg-slate-200 p-1.5 rounded text-slate-600"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                </div>
+
+                                <template x-if="selectedProject.tasks && selectedProject.tasks.length > 0">
+                                    <div class="space-y-2 mb-6">
+                                        <template x-for="task in selectedProject.tasks" :key="task.id">
+                                            <div class="flex items-start p-3 bg-white border border-slate-200 rounded shadow-sm group hover:border-green-300 transition-all">
+                                                <input type="checkbox" class="mt-0.5 w-4 h-4 text-green-600 rounded border-slate-300 focus:ring-green-500" x-model="task.isCompleted">
+                                                <div class="ml-3 flex-1">
+                                                    <span class="text-sm text-slate-700 block leading-tight" :class="{'line-through text-slate-400': task.isCompleted}" x-text="task.title"></span>
+                                                    <div class="flex justify-between items-center mt-1.5">
+                                                        <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded" x-text="task.assignedTo"></span>
+                                                        <span class="text-[10px] text-slate-400" x-text="task.deadline"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 border-t pt-4">KOMUNIKACIJA</h3>
+                                <div class="space-y-3 mb-4">
+                                     <template x-if="selectedProject.history">
+                                        <template x-for="log in selectedProject.history" :key="log.id">
+                                            <div class="flex flex-col bg-white p-3 rounded border border-slate-200">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <span class="text-xs font-bold text-slate-700" x-text="log.user"></span>
+                                                    <span class="text-[10px] text-slate-400" x-text="log.date"></span>
+                                                </div>
+                                                <div class="text-xs text-slate-600" x-text="log.action"></div>
+                                            </div>
+                                        </template>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-white border-t border-slate-200">
+                                <div class="flex gap-2">
+                                    <input type="text" x-model="chatInput" @keydown.enter="addComment()" class="flex-1 border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Rašyti komentarą...">
+                                    <button @click="addComment()" class="bg-green-600 text-white px-3 py-2 rounded text-xs hover:bg-green-700"><i data-lucide="send" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+</body>
+</html>
