@@ -42,14 +42,13 @@
                 
                 // Project Modal State
                 projectActiveTab: 'main', 
-                rightSidebarTab: 'comments', // Fixed: Added missing state
                 chatInput: '',
                 newTaskInput: '',
                 
                 // Email Form State
-                showEmailForm: false, // Fixed: Added missing state
-                emailSubject: '',     // Fixed: Added missing state
-                emailBody: '',        // Fixed: Added missing state
+                showEmailForm: false, 
+                emailSubject: '',     
+                emailBody: '',        
                 
                 // Filters
                 taskFilterResponsible: 'all',
@@ -71,6 +70,20 @@
                     { id: 4, label: 'Mokėjimas' },
                     { id: 5, label: 'Gautas' },
                     { id: 6, label: 'Užbaigta' }
+                ],
+                
+                // Mock Contacts Data
+                contactsData: [
+                    { city: 'Kaunas', department: 'Architektūros skyrius', name: 'Jonas Jonaitis', email: 'jonas.jonaitis@kaunas.lt', phone: '+370 600 00001' },
+                    { city: 'Vilnius', department: 'Reklamos poskyris', name: 'Ona Onaitė', email: 'ona.onaite@vilnius.lt', phone: '+370 600 00002' },
+                    { city: 'Pakruojis', department: 'Administracija', name: 'Petras Petraitis', email: 'petras@pakruojis.lt', phone: '+370 600 00003' },
+                ],
+
+                // Mock Templates Data
+                templatesData: [
+                    { name: 'Paraiška leidimui (Bendra)', type: 'DOCX', size: '24 KB', updated: '2024-01-15' },
+                    { name: 'Sutikimas dėl reklamos įrengimo', type: 'PDF', size: '150 KB', updated: '2023-11-20' },
+                    { name: 'Įgaliojimas atstovauti', type: 'DOCX', size: '18 KB', updated: '2024-02-01' },
                 ],
                 
                 occupancyData: [
@@ -236,7 +249,7 @@
                         price: '-', 
                         paymentStatus: 'None', 
                         paymentPeriod: '-',
-                        currentStage: 0, 
+                        currentStage: 0, // 0 means no active project
                         permitNumber: '-',
                         dimensions: '6x3',
                         structureType: 'Stendas',
@@ -265,6 +278,8 @@
                     }
                     if (this.activeTab === 'registry') return 'Visi Leidimai';
                     if (this.activeTab === 'occupancy') return 'Užimtumas';
+                    if (this.activeTab === 'contacts') return 'Savivaldybių Kontaktai';
+                    if (this.activeTab === 'templates') return 'Paraiškų Šablonai';
                     return '';
                 },
                 
@@ -464,7 +479,6 @@
                         if (!this.selectedProject.emails) this.selectedProject.emails = [];
                         this.selectedProject.emails.unshift(newEmail);
                         
-                        // Also log to history
                         const newLog = {
                             id: Date.now().toString() + 'log',
                             date: new Date().toISOString().split('T')[0],
@@ -551,11 +565,28 @@
                         class="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200 pl-8">
                         <span class="font-medium text-sm">Visi leidimai</span>
                     </button>
-                    <!-- NAUJAS PUNKTAS: UŽIMTUMAS -->
                     <button @click="activeTab = 'occupancy'; activeSubTab = 'all'" 
                         :class="activeTab === 'occupancy' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'"
                         class="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200 pl-8">
                         <span class="font-medium text-sm">Užimtumas</span>
+                    </button>
+                    <!-- NEW: Kontaktai -->
+                    <button @click="activeTab = 'contacts'; activeSubTab = 'all'" 
+                        :class="activeTab === 'contacts' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'"
+                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200 pl-8">
+                        <span class="font-medium text-sm">Kontaktai</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ŠABLONAI -->
+            <div>
+                <div class="px-4 mb-2 mt-4 text-xs font-bold text-slate-500 uppercase tracking-widest">ŠABLONAI</div>
+                <div class="space-y-1">
+                    <button @click="activeTab = 'templates'; activeSubTab = 'all'" 
+                        :class="activeTab === 'templates' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'"
+                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all duration-200 pl-8">
+                        <span class="font-medium text-sm">Paraiškos</span>
                     </button>
                 </div>
             </div>
@@ -1061,6 +1092,61 @@
                          </template>
                     </tbody>
                 </table>
+            </div>
+        </div>
+        
+        <!-- 7. CONTACTS (Kontaktai) - NEW -->
+        <div x-show="activeTab === 'contacts'" x-transition.opacity class="space-y-6">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Savivaldybių Kontaktai</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <template x-for="contact in contactsData">
+                        <div class="p-4 border border-slate-200 rounded-lg hover:border-green-300 transition-colors bg-slate-50">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i data-lucide="building-2" class="w-4 h-4 text-slate-400"></i>
+                                <span class="font-bold text-slate-800" x-text="contact.city"></span>
+                            </div>
+                            <div class="text-xs text-slate-500 mb-3" x-text="contact.department"></div>
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 text-sm text-slate-700">
+                                    <i data-lucide="user" class="w-3 h-3 text-slate-400"></i>
+                                    <span x-text="contact.name"></span>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-slate-700">
+                                    <i data-lucide="mail" class="w-3 h-3 text-slate-400"></i>
+                                    <a :href="'mailto:' + contact.email" class="hover:text-blue-600" x-text="contact.email"></a>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm text-slate-700">
+                                    <i data-lucide="phone" class="w-3 h-3 text-slate-400"></i>
+                                    <span x-text="contact.phone"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. TEMPLATES (Šablonai) - NEW -->
+        <div x-show="activeTab === 'templates'" x-transition.opacity class="space-y-6">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Paraiškų Šablonai</h3>
+                <div class="space-y-2">
+                    <template x-for="template in templatesData">
+                        <div class="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded flex items-center justify-center font-bold text-xs" x-text="template.type"></div>
+                                <div>
+                                    <div class="font-medium text-slate-900" x-text="template.name"></div>
+                                    <div class="text-xs text-slate-500">Atnaujinta: <span x-text="template.updated"></span> • Dydis: <span x-text="template.size"></span></div>
+                                </div>
+                            </div>
+                            <button class="text-slate-400 hover:text-green-600 p-2 rounded-full hover:bg-green-50">
+                                <i data-lucide="download" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
 
