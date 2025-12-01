@@ -59,12 +59,60 @@
                     { id: 6, label: 'Užbaigta' }
                 ],
                 
-                // Mock Occupancy Data (Užimtumas)
+                // Mock Occupancy Data (Užimtumas) - UPDATED
                 occupancyData: [
-                    { id: 'KS46-44', city: 'Kaunas', address: 'Savanorių pr.', status: 'OK/Pr', client: 'Havas Media UAB', period: '2025-09-01 - 2025-09-28' },
-                    { id: 'VLED-2', city: 'Vilnius', address: 'Švitrigailos g. 33', status: 'OK', client: 'UAB BCB Group', period: '2025-01-01 - 2025-12-31' },
-                    { id: 'PAS18-1', city: 'Pakruojis', address: 'Statybininkų g. 4b', status: 'OK/Pr', client: 'Pakruojo vartotojų koop', period: '2025-01-01 - 2025-12-31' },
-                    { id: 'AST18-2 A', city: 'Alytus', address: 'Santaikos g. 33 A', status: 'OK', client: '-', period: '-' },
+                    { 
+                        id: 'KS46-44', 
+                        city: 'Kaunas', 
+                        address: 'Savanorių pr.', 
+                        type: 'Siena', 
+                        lighting: 'Yra',
+                        contractDate: '2025-08-15',
+                        permitUntil: '2025-10-01',
+                        status: 'OK/Pr', 
+                        client: 'Havas Media UAB', 
+                        period: '2025-09-01 - 2025-09-28',
+                        active: true // For visualization
+                    },
+                    { 
+                        id: 'VLED-2', 
+                        city: 'Vilnius', 
+                        address: 'Švitrigailos g. 33', 
+                        type: 'Ekranas',
+                        lighting: 'Yra',
+                        contractDate: '2024-01-01',
+                        permitUntil: '2026-01-01',
+                        status: 'OK', 
+                        client: 'UAB BCB Group', 
+                        period: '2025-01-01 - 2025-12-31',
+                        active: true
+                    },
+                    { 
+                        id: 'PAS18-1', 
+                        city: 'Pakruojis', 
+                        address: 'Statybininkų g. 4b', 
+                        type: 'Stendas',
+                        lighting: 'Nėra',
+                        contractDate: '2023-05-20',
+                        permitUntil: '2025-12-31',
+                        status: 'OK/Pr', 
+                        client: 'Pakruojo vartotojų koop', 
+                        period: '2025-01-01 - 2025-12-31',
+                        active: true
+                    },
+                    { 
+                        id: 'AST18-2 A', 
+                        city: 'Alytus', 
+                        address: 'Santaikos g. 33 A', 
+                        type: 'Stendas',
+                        lighting: 'Nėra',
+                        contractDate: '-',
+                        permitUntil: '2025-09-01',
+                        status: 'OK', 
+                        client: '-', 
+                        period: '-',
+                        active: false
+                    },
                 ],
 
                 projects: [
@@ -742,30 +790,49 @@
                 <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                     <tr>
                         <th class="px-6 py-4">Kodas</th>
-                        <th class="px-6 py-4">Miestas</th>
-                        <th class="px-6 py-4">Adresas</th>
+                        <th class="px-6 py-4">Miestas / Adresas</th>
+                        <th class="px-6 py-4">Sutartis / Leidimas</th>
+                        <th class="px-6 py-4">Info</th>
+                        <th class="px-6 py-4">Klientas / Laikotarpis</th>
                         <th class="px-6 py-4">Statusas</th>
-                        <th class="px-6 py-4">Klientas</th>
-                        <th class="px-6 py-4">Laikotarpis</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                      <template x-for="item in occupancyData" :key="item.id">
                         <tr class="hover:bg-slate-50">
-                            <td class="px-6 py-4 font-mono font-bold text-slate-900" x-text="item.id"></td>
-                            <td class="px-6 py-4 text-slate-600" x-text="item.city"></td>
-                            <td class="px-6 py-4 text-slate-600" x-text="item.address"></td>
                             <td class="px-6 py-4">
-                                <span class="px-2 py-1 rounded text-xs font-medium border"
-                                    :class="item.status === 'OK' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
-                                    x-text="item.status"></span>
+                                <div class="font-mono font-bold text-slate-900" x-text="item.id"></div>
+                                <div class="text-xs text-slate-500 mt-1" x-text="item.type"></div>
                             </td>
-                            <td class="px-6 py-4 text-slate-600" x-text="item.client"></td>
                             <td class="px-6 py-4">
-                                <div class="flex items-center gap-2 text-xs bg-slate-100 px-2 py-1 rounded w-fit">
-                                    <i data-lucide="calendar" class="w-3 h-3 text-slate-400"></i>
+                                <div class="text-slate-900 font-medium" x-text="item.city"></div>
+                                <div class="text-xs text-slate-500" x-text="item.address"></div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col gap-1 text-xs">
+                                    <div class="text-slate-600">Sutartis: <span class="font-medium" x-text="item.contractDate"></span></div>
+                                    <div class="text-slate-600">Leidimas iki: <span class="font-medium" x-text="item.permitUntil"></span></div>
+                                </div>
+                            </td>
+                             <td class="px-6 py-4">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[10px] uppercase font-bold text-slate-400">Šviesa:</span>
+                                    <span class="text-xs font-medium" 
+                                          :class="item.lighting === 'Yra' ? 'text-green-600' : 'text-slate-400'" 
+                                          x-text="item.lighting"></span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-slate-900 text-sm mb-1" x-text="item.client"></div>
+                                <div class="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded w-fit">
+                                    <i data-lucide="calendar" class="w-3 h-3"></i>
                                     <span x-text="item.period"></span>
                                 </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 rounded text-xs font-medium border"
+                                    :class="item.active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
+                                    x-text="item.status"></span>
                             </td>
                         </tr>
                      </template>
